@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/common/log"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Collector struct {
@@ -68,6 +69,9 @@ var (
 	statusLedEnabledDesc *prometheus.Desc
 
 	softwareVersionInfoDesc *prometheus.Desc
+
+	lineStatusDesc *prometheus.Desc
+	lineNumberDesc *prometheus.Desc
 
 	logoutSuccessDesc *prometheus.Desc
 	logoutMessageDesc *prometheus.Desc
@@ -135,6 +139,9 @@ func init() {
 
 	softwareVersionInfoDesc = prometheus.NewDesc(prefix+"software_component_info", "Information about software components", []string{"name", "version", "licsense"}, nil)
 
+	lineStatusDesc = prometheus.NewDesc(prefix+"sip_line_status_info", "Information about SIP registration status", []string{"port", "status"}, nil)
+	lineNumberDesc = prometheus.NewDesc(prefix+"sip_line_numbers_info", "Information about phone numbers associated with SIP registration", []string{"port", "number"}, nil)
+
 	logoutSuccessDesc = prometheus.NewDesc(prefix+"logout_success_bool", "1 if the logout was successfull", nil, nil)
 	logoutMessageDesc = prometheus.NewDesc(prefix+"logout_message_info", "Logout message returned by the web interface", []string{"message"}, nil)
 }
@@ -196,6 +203,9 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- statusLedEnabledDesc
 
 	ch <- softwareVersionInfoDesc
+
+	ch <- lineStatusDesc
+	ch <- lineNumberDesc
 
 	ch <- logoutSuccessDesc
 	ch <- logoutMessageDesc
@@ -325,6 +335,20 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		}
 	}
 
+	phonenumbersResponse, err := c.Station.GetPhonenumbers()
+	if err != nil {
+		log.With("error", err.Error()).Error("Failed to get phone numbers information")
+	} else if phonenumbersResponse.Data != nil {
+		ch <- prometheus.MustNewConstMetric(lineStatusDesc, prometheus.GaugeValue, 1, "1", phonenumbersResponse.Data.LineStatus1)
+		ch <- prometheus.MustNewConstMetric(lineStatusDesc, prometheus.GaugeValue, 1, "2", phonenumbersResponse.Data.LineStatus2)
+		for _, phoneNumber := range parseCallnumber(phonenumbersResponse.Data.Callnumber1) {
+			ch <- prometheus.MustNewConstMetric(lineNumberDesc, prometheus.GaugeValue, 1, "1", phoneNumber)
+		}
+		for _, phoneNumber := range parseCallnumber(phonenumbersResponse.Data.Callnumber2) {
+			ch <- prometheus.MustNewConstMetric(lineNumberDesc, prometheus.GaugeValue, 1, "2", phoneNumber)
+		}
+	}
+
 	logoutresponse, err := c.Station.Logout()
 	if logoutresponse != nil {
 		ch <- prometheus.MustNewConstMetric(logoutMessageDesc, prometheus.GaugeValue, 1, logoutresponse.Message)
@@ -333,6 +357,19 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(logoutSuccessDesc, prometheus.GaugeValue, 0)
 	}
 	ch <- prometheus.MustNewConstMetric(logoutSuccessDesc, prometheus.GaugeValue, 1)
+}
+
+func parseCallnumber(str string) []string {
+	entries := strings.Split(str, ";")
+	result := []string{}
+
+	for _, entry := range entries {
+		if strings.HasPrefix(entry, "sip:") && !strings.HasSuffix(entry, "&gt") {
+			stripped := strings.TrimPrefix(entry, "sip:")
+			result = append(result, stripped)
+		}
+	}
+	return result
 }
 
 func parse2float(str string) float64 {

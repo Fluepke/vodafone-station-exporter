@@ -199,6 +199,23 @@ type SoftwareInfo struct {
 	License string `json:"license"`
 }
 
+type PhonenumbersResponse struct {
+	Error   string            `json:"error"`
+	Message string            `json:"message"`
+	Data    *PhonenumbersData `json:"data"`
+}
+
+type PhonenumbersData struct {
+	LineNumber1      string `json:"LineNumber1"`
+	Callnumber1      string `json:"callnumber1"`
+	LineStatus1      string `json:"LineStatus1"`
+	AdditionalInfos1 string `json:"AdditionalInfos1"`
+	LineNumber2      string `json:"LineNumber2"`
+	Callnumber2      string `json:"callnumber2"`
+	LineStatus2      string `json:"LineStatus2"`
+	AdditionalInfos2 string `json:"AdditionalInfos2"`
+}
+
 func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
 	cookieJar, err := cookiejar.New(nil)
 	parsedUrl, err := url.Parse(stationUrl)
@@ -307,6 +324,15 @@ func (v *VodafoneStation) GetStationAbout() (*StationAboutResponse, error) {
 	}
 	stationAboutResponse := &StationAboutResponse{}
 	return stationAboutResponse, json.Unmarshal(responseBody, stationAboutResponse)
+}
+
+func (v *VodafoneStation) GetPhonenumbers() (*PhonenumbersResponse, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/pho_phone_numbers?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return nil, err
+	}
+	phonenumbersResponse := &PhonenumbersResponse{}
+	return phonenumbersResponse, json.Unmarshal(responseBody, phonenumbersResponse)
 }
 
 func makeTimestamp() int64 {
