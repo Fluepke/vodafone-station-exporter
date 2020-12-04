@@ -86,4 +86,16 @@ function whatTheFuck(param1, param2) {
 }
 ```
 
-From here, I started the GoLang implementation.
+From here, I started the GoLang implementation, which looks as follows:
+```golang
+// GetLoginPassword derives the password using the given salts
+func GetLoginPassword(password, salt, saltWebUI string) string {
+    return DoPbkdf2NotCoded(DoPbkdf2NotCoded(password, salt), saltWebUI)
+}
+
+// Equivalent to the JS doPbkdf2NotCoded (see README.md) 
+func DoPbkdf2NotCoded(key, salt string) string {
+    temp := pbkdf2.Key([]byte(key), []byte(salt), 0x3e8, 0x80, sha256.New)
+    return hex.EncodeToString(temp[:16])
+}
+```
