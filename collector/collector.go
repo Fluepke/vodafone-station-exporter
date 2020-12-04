@@ -67,6 +67,8 @@ var (
 
 	statusLedEnabledDesc *prometheus.Desc
 
+	softwareVersionInfoDesc *prometheus.Desc
+
 	logoutSuccessDesc *prometheus.Desc
 	logoutMessageDesc *prometheus.Desc
 )
@@ -131,6 +133,8 @@ func init() {
 
 	statusLedEnabledDesc = prometheus.NewDesc(prefix+"status_led_enabled_bool", "Status LEDs", nil, nil)
 
+	softwareVersionInfoDesc = prometheus.NewDesc(prefix+"software_component_info", "Information about software components", []string{"name", "version", "licsense"}, nil)
+
 	logoutSuccessDesc = prometheus.NewDesc(prefix+"logout_success_bool", "1 if the logout was successfull", nil, nil)
 	logoutMessageDesc = prometheus.NewDesc(prefix+"logout_message_info", "Logout message returned by the web interface", []string{"message"}, nil)
 }
@@ -190,6 +194,8 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- callStartTimeDesc
 
 	ch <- statusLedEnabledDesc
+
+	ch <- softwareVersionInfoDesc
 
 	ch <- logoutSuccessDesc
 	ch <- logoutMessageDesc
@@ -308,6 +314,15 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		log.With("error", err.Error()).Error("Failed to get LED setting")
 	} else if ledSettingResponse.Data != nil {
 		ch <- prometheus.MustNewConstMetric(statusLedEnabledDesc, prometheus.GaugeValue, bool2float64(ledSettingResponse.Data.Led == "true"))
+	}
+
+	stationAboutResponse, err := c.Station.GetStationAbout()
+	if err != nil {
+		log.With("error", err.Error()).Error("Failed to get station about information")
+	} else if stationAboutResponse.Data != nil {
+		for _, softwareInfo := range stationAboutResponse.Data.Software {
+			ch <- prometheus.MustNewConstMetric(softwareVersionInfoDesc, prometheus.GaugeValue, 1, softwareInfo.Name, softwareInfo.Version, softwareInfo.License)
+		}
 	}
 
 	logoutresponse, err := c.Station.Logout()

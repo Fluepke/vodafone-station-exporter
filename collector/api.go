@@ -183,6 +183,22 @@ type LedData struct {
 	Led string `json:"led"`
 }
 
+type StationAboutResponse struct {
+	Error   string            `json:"error"`
+	Message string            `json:"message"`
+	Data    *StationAboutData `json:"data"`
+}
+
+type StationAboutData struct {
+	Software []*SoftwareInfo `json:"cosp"`
+}
+
+type SoftwareInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	License string `json:"license"`
+}
+
 func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
 	cookieJar, err := cookiejar.New(nil)
 	parsedUrl, err := url.Parse(stationUrl)
@@ -282,6 +298,15 @@ func (v *VodafoneStation) GetLedSetting() (*LedSettingResponse, error) {
 	}
 	ledSettingResponse := &LedSettingResponse{}
 	return ledSettingResponse, json.Unmarshal(responseBody, ledSettingResponse)
+}
+
+func (v *VodafoneStation) GetStationAbout() (*StationAboutResponse, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/sta_about?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return nil, err
+	}
+	stationAboutResponse := &StationAboutResponse{}
+	return stationAboutResponse, json.Unmarshal(responseBody, stationAboutResponse)
 }
 
 func makeTimestamp() int64 {
