@@ -62,6 +62,9 @@ var (
 	ipAddressRTDesc     *prometheus.Desc
 	ipPrefixClassDesc   *prometheus.Desc
 
+	callEndTimeDesc   *prometheus.Desc
+	callStartTimeDesc *prometheus.Desc
+
 	logoutSuccessDesc *prometheus.Desc
 	logoutMessageDesc *prometheus.Desc
 )
@@ -121,6 +124,9 @@ func init() {
 	ipAddressRTDesc = prometheus.NewDesc(prefix+"ip_address_rt_info", "IP address RT", []string{"ip"}, nil)
 	ipPrefixClassDesc = prometheus.NewDesc(prefix+"ip_prefix_class_info", "IP prefix class info", []string{"prefix_class"}, nil)
 
+	callEndTimeDesc = prometheus.NewDesc(prefix+"call_end_time_epoch", "Call endtime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
+	callStartTimeDesc = prometheus.NewDesc(prefix+"call_start_time_epoch", "Call starttime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
+
 	logoutSuccessDesc = prometheus.NewDesc(prefix+"logout_success_bool", "1 if the logout was successfull", nil, nil)
 	logoutMessageDesc = prometheus.NewDesc(prefix+"logout_message_info", "Logout message returned by the web interface", []string{"message"}, nil)
 }
@@ -175,6 +181,9 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- delegatedPrefixDesc
 	ch <- ipAddressRTDesc
 	ch <- ipPrefixClassDesc
+
+	ch <- callEndTimeDesc
+	ch <- callStartTimeDesc
 
 	ch <- logoutSuccessDesc
 	ch <- logoutMessageDesc
@@ -270,6 +279,22 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(ipAddressRTDesc, prometheus.GaugeValue, 1, ipAddressRT)
 		}
 		ch <- prometheus.MustNewConstMetric(ipPrefixClassDesc, prometheus.GaugeValue, 1, stationStatusResponse.Data.IpPrefixClass)
+	}
+
+	callLog, err := c.Station.GetCallLog()
+	if err != nil {
+		log.With("error", err.Error()).Error("Failed to get call log")
+	} else {
+		for port, phoneNumberCallLog := range callLog.Lines {
+			if phoneNumberCallLog.Data == nil {
+				continue
+			}
+			for _, callLogEntry := range phoneNumberCallLog.Data.Entries { //port", "id", "external_number", "direction", "type
+				labels := []string{port, callLogEntry.Id, callLogEntry.ExternalNumber, callLogEntry.Direction, callLogEntry.Type}
+				ch <- prometheus.MustNewConstMetric(callEndTimeDesc, prometheus.GaugeValue, parse2float(callLogEntry.EndTime), labels...)
+				ch <- prometheus.MustNewConstMetric(callStartTimeDesc, prometheus.GaugeValue, parse2float(callLogEntry.StartTime), labels...)
+			}
+		}
 	}
 
 	logoutresponse, err := c.Station.Logout()

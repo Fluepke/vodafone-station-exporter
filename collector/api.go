@@ -146,6 +146,32 @@ type StationStatusData struct {
 	IpPrefixClass   string   `json:"IpPrefixClass"`
 }
 
+type CallLog struct {
+	Lines map[string]*PhoneNumberCallLog
+	Line0 *PhoneNumberCallLog `json:"0"`
+	Line1 *PhoneNumberCallLog `json:"1"`
+	Token string              `json:"token"`
+}
+
+type PhoneNumberCallLog struct {
+	Error   string       `json:"error"`
+	Message string       `json:"message"`
+	Data    *CallLogData `json:"data"`
+}
+
+type CallLogData struct {
+	Entries []*CallLogEntry `json:"CallTbl"`
+}
+
+type CallLogEntry struct {
+	Id             string `json:"__id"`
+	EndTime        string `json:"endTime"`
+	StartTime      string `json:"startTime"`
+	ExternalNumber string `json:"externalNumber"`
+	Direction      string `json:"Direction"`
+	Type           string `json:"type"`
+}
+
 func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
 	cookieJar, err := cookiejar.New(nil)
 	parsedUrl, err := url.Parse(stationUrl)
@@ -216,9 +242,6 @@ func (v *VodafoneStation) GetDocsisStatus() (*DocsisStatusResponse, error) {
 }
 
 func (v *VodafoneStation) GetStationStatus() (*StationStatusReponse, error) {
-	if err := v.CheckTimeout(); err != nil {
-		return nil, err
-	}
 	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/sta_status?_="+strconv.FormatInt(makeTimestamp(), 10), "")
 	if err != nil {
 		return nil, err
@@ -227,12 +250,18 @@ func (v *VodafoneStation) GetStationStatus() (*StationStatusReponse, error) {
 	return stationStatusReponse, json.Unmarshal(responseBody, stationStatusReponse)
 }
 
-func (v *VodafoneStation) CheckTimeout() error {
-	_, err := v.doRequest("GET", v.URL+"/api/v1/CheckTimeOut?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+func (v *VodafoneStation) GetCallLog() (*CallLog, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/phone_calllog/1,2/CallTbl?_="+strconv.FormatInt(makeTimestamp(), 10), "")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	callLog := &CallLog{}
+	err = json.Unmarshal(responseBody, callLog)
+	if err != nil {
+		return nil, err
+	}
+	callLog.Lines = map[string]*PhoneNumberCallLog{"0": callLog.Line0, "1": callLog.Line1}
+	return callLog, nil
 }
 
 func makeTimestamp() int64 {
