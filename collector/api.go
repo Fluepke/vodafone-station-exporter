@@ -95,6 +95,56 @@ type DocsisUpstreamChannel struct {
 	RangingStatus    string `json:"RangingStatus"`
 }
 
+type StationStatusReponse struct {
+	Error   string             `json:"error"`
+	Message string             `json:"message"`
+	Data    *StationStatusData `json:"data"`
+}
+
+type StationStatusData struct {
+	DateAndTime     string `json:"dateandtime"`
+	FirewallStatus  string `json:"firewallstatus"`
+	LanIpv4         string `json:"lanipv4"`
+	LanMode         string `json:"LanMode"`
+	LanGateway      string `json:"langateway"`
+	LanDHCPstatus   string `json:"lanDHCPstatus"`
+	LanMAC          string `json:"lanMAC"`
+	LanPortStatus4  string `json:"lanportstatus_4"`
+	LanPortSpeed4   string `json:"lanportspeed_4"`
+	LanPortStatus1  string `json:"lanportstatus_1"`
+	LanPortSpeed1   string `json:"lanportspeed_1"`
+	LanPortStatus2  string `json:"lanportstatus_2"`
+	LanPortSpeed2   string `json:"lanportspeed_2"`
+	LanPortStatus3  string `json:"lanportstatus_3"`
+	LanPortSpeed3   string `json:"lanportspeed_3"`
+	WifiStatus      string `json:"wifistatus"`
+	Channel         string `json:"channel"`
+	Bandwidth       string `json:"bandwidth"`
+	MaxSpeed        string `json:"maxspeed"`
+	Ssid            string `json:"ssid"`
+	MacAddress      string `json:"macaddress"`
+	Security        string `json:"security"`
+	WifiStatus5     string `json:"wifistatus_5"`
+	Channel5        string `json:"channel_5"`
+	Bandwidth5      string `json:"bandwidth_5"`
+	MaxSpeed5       string `json:"maxspeed_5"`
+	Ssid5           string `json:"ssid_5"`
+	Macaddress5     string `json:"macaddress_5"`
+	Security5       string `json:"security_5"`
+	DnsEntries      string `json:"DnsEntries"`
+	AFTR            string `json:"AFTR"`
+	Serialnumber    string `json:"serialnumber"`
+	FirmwareVersion string `json:"firmwareversion"`
+	HardwareType    string `json:"hardwaretype"`
+	Uptime          string `json:"uptime"`
+	InternetIpv4    string `json:"internetipv4"`
+	DnsTbl          string `json:"Dns_Tbl"`
+	DelegatedPrefix string `json:"DelegatedPrefix"`
+	DNSTblRT        string `json:"DNSTblRT"`
+	IPAddressRT     string `json:"IPAddressRT"`
+	IpPrefixClass   string `json:"IpPrefixClass"`
+}
+
 func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
 	cookieJar, err := cookiejar.New(nil)
 	parsedUrl, err := url.Parse(stationUrl)
@@ -162,6 +212,15 @@ func (v *VodafoneStation) GetDocsisStatus() (*DocsisStatusResponse, error) {
 	}
 	docsisStatusResponse := &DocsisStatusResponse{}
 	return docsisStatusResponse, json.Unmarshal(responseBody, docsisStatusResponse)
+}
+
+func (v *VodafoneStation) GetStationStatus() (*StationStatusReponse, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/sta_status?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return nil, err
+	}
+	stationStatusReponse := &StationStatusReponse{}
+	return stationStatusReponse, json.Unmarshal(responseBody, stationStatusReponse)
 }
 
 func makeTimestamp() int64 {
