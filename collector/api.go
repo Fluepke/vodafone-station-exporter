@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/common/log"
 	"golang.org/x/crypto/pbkdf2"
 	"io/ioutil"
 	"net/http"
@@ -102,47 +103,47 @@ type StationStatusReponse struct {
 }
 
 type StationStatusData struct {
-	DateAndTime     string `json:"dateandtime"`
-	FirewallStatus  string `json:"firewallstatus"`
-	LanIpv4         string `json:"lanipv4"`
-	LanMode         string `json:"LanMode"`
-	LanGateway      string `json:"langateway"`
-	LanDHCPstatus   string `json:"lanDHCPstatus"`
-	LanMAC          string `json:"lanMAC"`
-	LanPortStatus4  string `json:"lanportstatus_4"`
-	LanPortSpeed4   string `json:"lanportspeed_4"`
-	LanPortStatus1  string `json:"lanportstatus_1"`
-	LanPortSpeed1   string `json:"lanportspeed_1"`
-	LanPortStatus2  string `json:"lanportstatus_2"`
-	LanPortSpeed2   string `json:"lanportspeed_2"`
-	LanPortStatus3  string `json:"lanportstatus_3"`
-	LanPortSpeed3   string `json:"lanportspeed_3"`
-	WifiStatus      string `json:"wifistatus"`
-	Channel         string `json:"channel"`
-	Bandwidth       string `json:"bandwidth"`
-	MaxSpeed        string `json:"maxspeed"`
-	Ssid            string `json:"ssid"`
-	MacAddress      string `json:"macaddress"`
-	Security        string `json:"security"`
-	WifiStatus5     string `json:"wifistatus_5"`
-	Channel5        string `json:"channel_5"`
-	Bandwidth5      string `json:"bandwidth_5"`
-	MaxSpeed5       string `json:"maxspeed_5"`
-	Ssid5           string `json:"ssid_5"`
-	Macaddress5     string `json:"macaddress_5"`
-	Security5       string `json:"security_5"`
-	DnsEntries      string `json:"DnsEntries"`
-	AFTR            string `json:"AFTR"`
-	Serialnumber    string `json:"serialnumber"`
-	FirmwareVersion string `json:"firmwareversion"`
-	HardwareType    string `json:"hardwaretype"`
-	Uptime          string `json:"uptime"`
-	InternetIpv4    string `json:"internetipv4"`
-	DnsTbl          string `json:"Dns_Tbl"`
-	DelegatedPrefix string `json:"DelegatedPrefix"`
-	DNSTblRT        string `json:"DNSTblRT"`
-	IPAddressRT     string `json:"IPAddressRT"`
-	IpPrefixClass   string `json:"IpPrefixClass"`
+	DateAndTime     string   `json:"dateandtime"`
+	FirewallStatus  string   `json:"firewallstatus"`
+	LanIpv4         string   `json:"lanipv4"`
+	LanMode         string   `json:"LanMode"`
+	LanGateway      string   `json:"langateway"`
+	LanDHCPstatus   string   `json:"lanDHCPstatus"`
+	LanMAC          string   `json:"lanMAC"`
+	LanPortStatus4  string   `json:"lanportstatus_4"`
+	LanPortSpeed4   string   `json:"lanportspeed_4"`
+	LanPortStatus1  string   `json:"lanportstatus_1"`
+	LanPortSpeed1   string   `json:"lanportspeed_1"`
+	LanPortStatus2  string   `json:"lanportstatus_2"`
+	LanPortSpeed2   string   `json:"lanportspeed_2"`
+	LanPortStatus3  string   `json:"lanportstatus_3"`
+	LanPortSpeed3   string   `json:"lanportspeed_3"`
+	WifiStatus      string   `json:"wifistatus"`
+	Channel         string   `json:"channel"`
+	Bandwidth       string   `json:"bandwidth"`
+	MaxSpeed        string   `json:"maxspeed"`
+	Ssid            string   `json:"ssid"`
+	MacAddress      string   `json:"macaddress"`
+	Security        string   `json:"security"`
+	WifiStatus5     string   `json:"wifistatus_5"`
+	Channel5        string   `json:"channel_5"`
+	Bandwidth5      string   `json:"bandwidth_5"`
+	MaxSpeed5       string   `json:"maxspeed_5"`
+	Ssid5           string   `json:"ssid_5"`
+	MacAddress5     string   `json:"macaddress_5"`
+	Security5       string   `json:"security_5"`
+	DnsEntries      string   `json:"DnsEntries"`
+	AFTR            string   `json:"AFTR"`
+	Serialnumber    string   `json:"serialnumber"`
+	FirmwareVersion string   `json:"firmwareversion"`
+	HardwareType    string   `json:"hardwaretype"`
+	Uptime          string   `json:"uptime"`
+	InternetIpv4    string   `json:"internetipv4"`
+	DnsTbl          []string `json:"Dns_Tbl"`
+	DelegatedPrefix string   `json:"DelegatedPrefix"`
+	DNSTblRT        []string `json:"DNSTblRT"`
+	IPAddressRT     []string `json:"IPAddressRT"`
+	IpPrefixClass   string   `json:"IpPrefixClass"`
 }
 
 func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
@@ -162,7 +163,7 @@ func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
 		Password: password,
 		client: &http.Client{
 			Jar:     cookieJar,
-			Timeout: time.Second * 10,
+			Timeout: time.Second * 20, // getting DOCSIS status can be slow!
 		},
 	}
 }
@@ -215,12 +216,23 @@ func (v *VodafoneStation) GetDocsisStatus() (*DocsisStatusResponse, error) {
 }
 
 func (v *VodafoneStation) GetStationStatus() (*StationStatusReponse, error) {
+	if err := v.CheckTimeout(); err != nil {
+		return nil, err
+	}
 	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/sta_status?_="+strconv.FormatInt(makeTimestamp(), 10), "")
 	if err != nil {
 		return nil, err
 	}
 	stationStatusReponse := &StationStatusReponse{}
 	return stationStatusReponse, json.Unmarshal(responseBody, stationStatusReponse)
+}
+
+func (v *VodafoneStation) CheckTimeout() error {
+	_, err := v.doRequest("GET", v.URL+"/api/v1/CheckTimeOut?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func makeTimestamp() int64 {
@@ -244,9 +256,12 @@ func (v *VodafoneStation) getLoginSalts() (*LoginResponseSalts, error) {
 }
 
 func (v *VodafoneStation) doRequest(method, url, body string) ([]byte, error) {
+	logger := log.With("method", method).With("url", url)
+	logger.Debug("Performing request")
 	requestBody := strings.NewReader(body)
 	request, err := http.NewRequest(method, url, requestBody)
 	if err != nil {
+		logger.With("error", err.Error).Error("Creating request failed")
 		return nil, err
 	}
 	if method == "POST" {
@@ -256,6 +271,7 @@ func (v *VodafoneStation) doRequest(method, url, body string) ([]byte, error) {
 	request.Header.Set("X-Requested-With", "XMLHttpRequest")
 	response, err := v.client.Do(request)
 	if err != nil {
+		logger.With("error", err.Error).Error("Performing request failed")
 		return nil, err
 	}
 	if response.Body != nil {

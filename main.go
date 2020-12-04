@@ -17,12 +17,18 @@ var (
 	showVersion             = flag.Bool("version", false, "Print version and exit")
 	listenAddress           = flag.String("web.listen-address", "[::]:9420", "Address to listen on")
 	metricsPath             = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics")
+	logLevel                = flag.String("log.level", "info", "Logging level")
 	vodafoneStationUrl      = flag.String("vodafone.station-url", "http://192.168.0.1", "Vodafone station URL. For bridge mode this is 192.168.100.1 (note: Configure a route if using bridge mode)")
 	vodafoneStationPassword = flag.String("vodafone.station-password", "How is the default password calculated? mhmm", "Password for logging into the Vodafone station")
 )
 
 func main() {
 	flag.Parse()
+	err := log.Base().SetLevel(*logLevel)
+	if err != nil {
+		fmt.Println("Invalid log level")
+		os.Exit(2)
+	}
 
 	if *showVersion {
 		fmt.Println("vodafone-station-exporter")
