@@ -65,6 +65,8 @@ var (
 	callEndTimeDesc   *prometheus.Desc
 	callStartTimeDesc *prometheus.Desc
 
+	statusLedEnabledDesc *prometheus.Desc
+
 	logoutSuccessDesc *prometheus.Desc
 	logoutMessageDesc *prometheus.Desc
 )
@@ -127,6 +129,8 @@ func init() {
 	callEndTimeDesc = prometheus.NewDesc(prefix+"call_end_time_epoch", "Call endtime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
 	callStartTimeDesc = prometheus.NewDesc(prefix+"call_start_time_epoch", "Call starttime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
 
+	statusLedEnabledDesc = prometheus.NewDesc(prefix+"status_led_enabled_bool", "Status LEDs", nil, nil)
+
 	logoutSuccessDesc = prometheus.NewDesc(prefix+"logout_success_bool", "1 if the logout was successfull", nil, nil)
 	logoutMessageDesc = prometheus.NewDesc(prefix+"logout_message_info", "Logout message returned by the web interface", []string{"message"}, nil)
 }
@@ -184,6 +188,8 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 
 	ch <- callEndTimeDesc
 	ch <- callStartTimeDesc
+
+	ch <- statusLedEnabledDesc
 
 	ch <- logoutSuccessDesc
 	ch <- logoutMessageDesc
@@ -295,6 +301,13 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				ch <- prometheus.MustNewConstMetric(callStartTimeDesc, prometheus.GaugeValue, parse2float(callLogEntry.StartTime), labels...)
 			}
 		}
+	}
+
+	ledSettingResponse, err := c.Station.GetLedSetting()
+	if err != nil {
+		log.With("error", err.Error()).Error("Failed to get LED setting")
+	} else if ledSettingResponse.Data != nil {
+		ch <- prometheus.MustNewConstMetric(statusLedEnabledDesc, prometheus.GaugeValue, bool2float64(ledSettingResponse.Data.Led == "true"))
 	}
 
 	logoutresponse, err := c.Station.Logout()

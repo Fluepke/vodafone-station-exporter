@@ -172,6 +172,17 @@ type CallLogEntry struct {
 	Type           string `json:"type"`
 }
 
+type LedSettingResponse struct {
+	Error   string   `json:"error"`
+	Message string   `json:"message"`
+	Data    *LedData `json:"data"`
+	Token   string   `json:"token"`
+}
+
+type LedData struct {
+	Led string `json:"led"`
+}
+
 func NewVodafoneStation(stationUrl, password string) *VodafoneStation {
 	cookieJar, err := cookiejar.New(nil)
 	parsedUrl, err := url.Parse(stationUrl)
@@ -262,6 +273,15 @@ func (v *VodafoneStation) GetCallLog() (*CallLog, error) {
 	}
 	callLog.Lines = map[string]*PhoneNumberCallLog{"0": callLog.Line0, "1": callLog.Line1}
 	return callLog, nil
+}
+
+func (v *VodafoneStation) GetLedSetting() (*LedSettingResponse, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/set_led?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return nil, err
+	}
+	ledSettingResponse := &LedSettingResponse{}
+	return ledSettingResponse, json.Unmarshal(responseBody, ledSettingResponse)
 }
 
 func makeTimestamp() int64 {
