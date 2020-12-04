@@ -9,12 +9,14 @@ import (
 	"github.com/prometheus/common/log"
 	"net/http"
 	"os"
+	"reflect"
 )
 
 const version = "0.0.1"
 
 var (
 	showVersion             = flag.Bool("version", false, "Print version and exit")
+	showMetrics             = flag.Bool("show-metrics", false, "Show available metrics and exit")
 	listenAddress           = flag.String("web.listen-address", "[::]:9420", "Address to listen on")
 	metricsPath             = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics")
 	logLevel                = flag.String("log.level", "info", "Logging level")
@@ -30,6 +32,11 @@ func main() {
 		os.Exit(2)
 	}
 
+	if *showMetrics {
+		describeMetrics()
+		os.Exit(0)
+	}
+
 	if *showVersion {
 		fmt.Println("vodafone-station-exporter")
 		fmt.Printf("Version: %s\n", version)
@@ -39,6 +46,42 @@ func main() {
 	}
 
 	startServer()
+}
+
+func describeMetrics() {
+	fmt.Println("Exported metrics")
+	c := &collector.Collector{}
+	ch := make(chan *prometheus.Desc)
+	go func() {
+		defer close(ch)
+		c.Describe(ch)
+	}()
+	for desc := range ch {
+		if desc == nil {
+			continue
+		}
+		describeMetric(desc)
+	}
+}
+
+func describeMetric(desc *prometheus.Desc) {
+	fqName := reflect.ValueOf(desc).Elem().FieldByName("fqName").String()
+	help := reflect.ValueOf(desc).Elem().FieldByName("help").String()
+	labels := reflect.ValueOf(desc).Elem().FieldByName("variableLabels")
+	fmt.Println("  * `" + fqName + "`: " + help)
+	if labels.Len() == 0 {
+		return
+	}
+	fmt.Print("    - Labels: ")
+	first := true
+	for i := 0; i < labels.Len(); i++ {
+		if !first {
+			fmt.Print(", ")
+		}
+		first = false
+		fmt.Print("`" + labels.Index(i).String() + "`")
+	}
+	fmt.Println("")
 }
 
 func startServer() {
