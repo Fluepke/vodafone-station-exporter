@@ -6,15 +6,15 @@ import (
 )
 
 func TestDoPbkdf2NotCoded(t *testing.T) {
-	result := collector.DoPbkdf2NotCoded("EqAM2KtT", "2awfm2st3cej")
-	if result != "c2523cb6738663f9d9223c905c59cbb6" {
-		t.Errorf("Got %s", result)
+	result := collector.DoPbkdf2NotCoded("passw0rd", "s4lt")
+	if result != "22995aae586afda236e436c7df61860a" {
+		t.Errorf("DoPbkdf2NotCoded failed")
 	}
 }
 
 func TestGetLoginPassword(t *testing.T) {
-	loginPassword := collector.GetLoginPassword("EqAM2KtT", "2awfm2st3cej", "4hbeVQ1Z6HK2")
-	if loginPassword != "b000b59875d1dc81bcd9d8f658fc7e77" {
-		t.Errorf("Derivation of login password failed!")
+	loginPassword := collector.GetLoginPassword("passw0rd", "s4lt", "s4ltWebUi")
+	if loginPassword != "73446f649cc5fa67d05f76c1048e3140" {
+		t.Errorf("Derivation of login password failed")
 	}
 }

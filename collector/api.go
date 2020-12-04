@@ -72,6 +72,5 @@ func GetLoginPassword(password, salt, saltWebUI string) string {
 // Equivalent to the JS doPbkdf2NotCoded (see README.md)
 func DoPbkdf2NotCoded(key, salt string) string {
 	temp := pbkdf2.Key([]byte(key), []byte(salt), 0x3e8, 0x80, sha256.New)
-	fmt.Println(hex.EncodeToString(temp))
 	return hex.EncodeToString(temp[:16])
 }
