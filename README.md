@@ -1,5 +1,23 @@
 # Vodafone Station Exporter
-Prometheus Exporter for the Vodafone Station CGA4233DE.
+Prometheus Exporter for the Vodafone Station (`CGA4233DE`)
+
+Exposes various information such as DOCSIS channel status.
+
+## Usage
+```
+Usage of ./vodafone-station-exporter:
+  -version
+    	Print version and exit
+  -vodafone.station-password string
+    	Password for logging into the Vodafone station (default "How is the default password calculated? mhmm")
+  -vodafone.station-url string
+    	Vodafone station URL. For bridge mode this is 192.168.100.1 (note: Configure a route if using bridge mode) (default "http://192.168.0.1")
+  -web.listen-address string
+    	Address to listen on (default "[::]:9420")
+  -web.telemetry-path string
+    	Path under which to expose metrics (default "/metrics")
+```
+
 
 ## Reverse Engineering the login mechanism
 > I am not a Javascript engineer, but it works :man_shrugging:
