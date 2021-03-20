@@ -340,7 +340,7 @@ func makeTimestamp() int64 {
 }
 
 func (v *VodafoneStation) getLoginSalts() (*LoginResponseSalts, error) {
-	responseBody, err := v.doRequest("POST", v.URL+"/api/v1/session/login", "username=admin&password=seeksalthash")
+	responseBody, err := v.doRequest("POST", v.URL+"/api/v1/session/login", "username=admin&password=seeksalthash&logout=true")
 	if err != nil {
 		return nil, err
 	}
