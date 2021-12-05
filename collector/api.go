@@ -257,6 +257,10 @@ func (v *VodafoneStation) Login() (*LoginResponse, error) {
 	if loginResponse.Error != "ok" {
 		return nil, fmt.Errorf("Got non error=ok message from vodafone station")
 	}
+	_, err = v.doRequest("GET", v.URL+"/api/v1/session/menu", "")
+	if err != nil {
+		return nil, err
+	}
 	return loginResponse, nil
 }
 
