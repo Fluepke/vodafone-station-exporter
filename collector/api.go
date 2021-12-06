@@ -336,7 +336,7 @@ func (v *VodafoneStation) GetCallLog() (*CallLog, error) {
 }
 
 func (v *VodafoneStation) GetLedSetting() (*LedSettingResponse, error) {
-	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/set_led?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/set_device?_="+strconv.FormatInt(makeTimestamp(), 10), "")
 	if err != nil {
 		return nil, err
 	}
