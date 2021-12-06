@@ -37,6 +37,13 @@ var (
 	powerUpstreamDesc            *prometheus.Desc
 	rangingStatusUpstreamDesc    *prometheus.Desc
 
+	startFrequencyOfdmaUpstreamDesc   *prometheus.Desc
+	endFrequencyOfdmaUpstreamDesc     *prometheus.Desc
+	centralFrequencyOfdmaUpstreamDesc *prometheus.Desc
+	bandwidthOfdmaUpstreamDesc        *prometheus.Desc
+	powerOfdmaUpstreamDesc            *prometheus.Desc
+	rangingStatusOfdmaUpstreamDesc    *prometheus.Desc
+
 	firewallStatusDesc  *prometheus.Desc
 	lanIPv4Desc         *prometheus.Desc
 	lanModeDesc         *prometheus.Desc
@@ -115,6 +122,14 @@ func init() {
 	powerUpstreamDesc = prometheus.NewDesc(prefix+"upstream_power_dBmV", "Power", upstreamLabels, nil)
 	rangingStatusUpstreamDesc = prometheus.NewDesc(prefix+"upstream_ranging_status_info", "Ranging status", append(upstreamLabels, "status"), nil)
 
+	ofdmaUpstreamLabels := []string{"id", "channel_id_up", "fft", "channel_type"}
+	startFrequencyOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_start_frequency_hertz", "Start frequency", ofdmaUpstreamLabels, nil)
+	endFrequencyOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_end_frequency_hertz", "End frequency", ofdmaUpstreamLabels, nil)
+	centralFrequencyOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_central_frequency_hertz", "Central frequency", ofdmaUpstreamLabels, nil)
+	bandwidthOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_bandwidth_hertz", "Bandwidth", ofdmaUpstreamLabels, nil)
+	powerOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_power_dBmV", "Power", ofdmaUpstreamLabels, nil)
+	rangingStatusOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_ranging_status_info", "Ranging status", append(ofdmaUpstreamLabels, "status"), nil)
+
 	firewallStatusDesc = prometheus.NewDesc(prefix+"firewall_status_info", "Firewall status", []string{"firewall_status"}, nil)
 	lanIPv4Desc = prometheus.NewDesc(prefix+"lan_ip4_info", "LAN IPv4 info", []string{"lan_ip4"}, nil)
 	lanModeDesc = prometheus.NewDesc(prefix+"lan_mode_info", "LAN mode info", []string{"mode"}, nil)
@@ -188,6 +203,13 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- centralFrequencyUpstreamDesc
 	ch <- powerUpstreamDesc
 	ch <- rangingStatusUpstreamDesc
+
+	ch <- startFrequencyOfdmaUpstreamDesc
+	ch <- endFrequencyOfdmaUpstreamDesc
+	ch <- centralFrequencyOfdmaUpstreamDesc
+	ch <- bandwidthOfdmaUpstreamDesc
+	ch <- powerOfdmaUpstreamDesc
+	ch <- rangingStatusOfdmaUpstreamDesc
 
 	ch <- firewallStatusDesc
 	ch <- lanIPv4Desc
@@ -282,6 +304,15 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(powerUpstreamDesc, prometheus.GaugeValue, parse2float(upstreamChannel.Power), labels...)
 			ch <- prometheus.MustNewConstMetric(rangingStatusUpstreamDesc, prometheus.GaugeValue, 1, append(labels, upstreamChannel.RangingStatus)...)
 		}
+        for _, ofdmaUpstreamChannel := range docsisStatusResponse.Data.OfdmaUpstreamData {
+            labels := []string{ofdmaUpstreamChannel.Id, ofdmaUpstreamChannel.ChannelIdUp, ofdmaUpstreamChannel.Fft, ofdmaUpstreamChannel.ChannelType}
+            ch <- prometheus.MustNewConstMetric(startFrequencyOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.StartFrequency)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(endFrequencyOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.EndFrequency)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(centralFrequencyOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.CentralFrequency)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(bandwidthOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.Bandwidth)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(powerOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.Power)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(rangingStatusOfdmaUpstreamDesc, prometheus.GaugeValue, 1, append(labels, ofdmaUpstreamChannel.RangingStatus)...)
+        }
 	}
 
 	stationStatusResponse, err := c.Station.GetStationStatus()

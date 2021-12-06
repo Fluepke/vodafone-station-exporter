@@ -58,6 +58,7 @@ type DocsisStatusResponse struct {
 type DocsisStatusData struct {
 	OfdmDownstreamData []*OfdmDownstreamData      `json:"ofdm_downstream"`
 	Downstream         []*DocsisDownstreamChannel `json:"downstream"`
+	OfdmaUpstreamData  []*OfdmaUpstreamData       `json:"ofdma_upstream"`
 	Upstream           []*DocsisUpstreamChannel   `json:"upstream"`
 }
 
@@ -84,6 +85,19 @@ type DocsisDownstreamChannel struct {
 	Fft              string `json:"FFT"`
 	Locked           string `json:"locked"`
 	ChannelType      string `json:"ChannelType"`
+}
+
+type OfdmaUpstreamData struct {
+	Id               string `json:"__id"`
+	ChannelIdUp      string `json:"channelidup"`
+	StartFrequency   string `json:"start_frequency"`
+	EndFrequency     string `json:"end_frequency"`
+	Power            string `json:"power"`
+	CentralFrequency string `json:"CentralFrequency"`
+	Bandwidth        string `json:"bandwidth"`
+	Fft              string `json:"FFT"`
+	ChannelType      string `json:"ChannelType"`
+	RangingStatus    string `json:"RangingStatus"`
 }
 
 type DocsisUpstreamChannel struct {
