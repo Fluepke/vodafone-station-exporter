@@ -146,6 +146,17 @@ type StationStatusData struct {
 	IpPrefixClass   string   `json:"IpPrefixClass"`
 }
 
+type WanStatusData struct {
+	Ipv4	 string     `json:"ipv4"`
+	Mac           string     `json:"mac_address"`
+	Duration	 string     `json:"duration"`
+	DurationIpv6  string     `json:"durationIpv6"`
+	Expires       string     `json:"expires"`
+	Ipv4Dns       string     `json:"ipv4_dns"`
+	IPAddressV6  []string     `json:"IPAddress_v6"`
+	DNSTblRT        []string   `json:"DNSTblRT"`
+}
+
 type CallLog struct {
 	Lines map[string]*PhoneNumberCallLog
 	Line0 *PhoneNumberCallLog `json:"0"`
@@ -187,6 +198,12 @@ type StationAboutResponse struct {
 	Error   string            `json:"error"`
 	Message string            `json:"message"`
 	Data    *StationAboutData `json:"data"`
+}
+
+type WanStatusResponse struct {
+	Error   string            `json:"error"`
+	Message string            `json:"message"`
+	Data    *WanStatusData	  `json:"data"`
 }
 
 type StationAboutData struct {
@@ -319,6 +336,15 @@ func (v *VodafoneStation) GetLedSetting() (*LedSettingResponse, error) {
 	}
 	ledSettingResponse := &LedSettingResponse{}
 	return ledSettingResponse, json.Unmarshal(responseBody, ledSettingResponse)
+}
+
+func (v *VodafoneStation) GetWanStatus() (*WanStatusResponse, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/wan?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return nil, err
+	}
+	WanStatusResponse := &WanStatusResponse{}
+	return WanStatusResponse, json.Unmarshal(responseBody, WanStatusResponse)
 }
 
 func (v *VodafoneStation) GetStationAbout() (*StationAboutResponse, error) {

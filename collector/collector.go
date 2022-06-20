@@ -63,6 +63,15 @@ var (
 	ipAddressRTDesc     *prometheus.Desc
 	ipPrefixClassDesc   *prometheus.Desc
 
+	Ipv4Desc         *prometheus.Desc
+	MacDesc          *prometheus.Desc
+	DurationDesc     *prometheus.Desc
+	DurationIpv6Desc *prometheus.Desc
+	ExpiresDesc      *prometheus.Desc
+	Ipv4DnsDesc      *prometheus.Desc
+	IPAddressV6Desc  *prometheus.Desc
+	DNSTblRTDesc     *prometheus.Desc
+
 	callEndTimeDesc   *prometheus.Desc
 	callStartTimeDesc *prometheus.Desc
 
@@ -132,6 +141,15 @@ func init() {
 	ipAddressRTDesc = prometheus.NewDesc(prefix+"ip_address_rt_info", "IP address RT", []string{"ip"}, nil)
 	ipPrefixClassDesc = prometheus.NewDesc(prefix+"ip_prefix_class_info", "IP prefix class info", []string{"prefix_class"}, nil)
 
+	Ipv4Desc = prometheus.NewDesc(prefix+"wan_ip4_info", "WAN IPv4 info", []string{"wan_ip4"}, nil)
+	MacDesc = prometheus.NewDesc(prefix+"wan_mac_address_info", "WAN MAC address", []string{"wan_mac_address"}, nil)
+	DurationDesc = prometheus.NewDesc(prefix+"wan_duration_seconds", "WAN Duration in seconds", nil, nil)
+	DurationIpv6Desc = prometheus.NewDesc(prefix+"wan_ip6_duration_seconds", "WAN IPv6 Duration in seconds", nil, nil)
+	ExpiresDesc = prometheus.NewDesc(prefix+"wan_expires_seconds", "WAN Expires in seconds", nil, nil)
+	Ipv4DnsDesc = prometheus.NewDesc(prefix+"wan_ipv4_dns_info", "WAN IPv4 DNS server", []string{"wan_ipv4_dns"}, nil)
+	IPAddressV6Desc = prometheus.NewDesc(prefix+"wan_ip6_info", "WAN IPv6 info", []string{"wan_ip6"}, nil)
+	DNSTblRTDesc = prometheus.NewDesc(prefix+"wan_ipv6_dns_info", "WAN IPv6 DNS server", []string{"wan_ipv6_dns"}, nil)
+
 	callEndTimeDesc = prometheus.NewDesc(prefix+"call_end_time_epoch", "Call endtime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
 	callStartTimeDesc = prometheus.NewDesc(prefix+"call_start_time_epoch", "Call starttime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
 
@@ -196,6 +214,15 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- delegatedPrefixDesc
 	ch <- ipAddressRTDesc
 	ch <- ipPrefixClassDesc
+
+	ch <- Ipv4Desc
+	ch <- MacDesc
+	ch <- DurationDesc
+	ch <- DurationIpv6Desc
+	ch <- ExpiresDesc
+	ch <- Ipv4DnsDesc
+	ch <- IPAddressV6Desc
+	ch <- DNSTblRTDesc
 
 	ch <- callEndTimeDesc
 	ch <- callStartTimeDesc
@@ -301,6 +328,27 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(ipAddressRTDesc, prometheus.GaugeValue, 1, ipAddressRT)
 		}
 		ch <- prometheus.MustNewConstMetric(ipPrefixClassDesc, prometheus.GaugeValue, 1, stationStatusResponse.Data.IpPrefixClass)
+	}
+
+	wanStatusResponse, err := c.Station.GetWanStatus()
+	if err != nil {
+		log.With("error", err.Error()).Error("Failed to get wan status")
+	} else if wanStatusResponse.Data != nil {
+		ch <- prometheus.MustNewConstMetric(Ipv4Desc, prometheus.GaugeValue, 1, wanStatusResponse.Data.Ipv4)
+		ch <- prometheus.MustNewConstMetric(MacDesc, prometheus.GaugeValue, 1, wanStatusResponse.Data.Mac)
+		ch <- prometheus.MustNewConstMetric(DurationDesc, prometheus.GaugeValue, parse2float(wanStatusResponse.Data.Duration))
+		ch <- prometheus.MustNewConstMetric(DurationIpv6Desc, prometheus.GaugeValue, parse2float(wanStatusResponse.Data.DurationIpv6))
+		ch <- prometheus.MustNewConstMetric(ExpiresDesc, prometheus.GaugeValue, parse2float(wanStatusResponse.Data.Expires))
+		ch <- prometheus.MustNewConstMetric(Ipv4DnsDesc, prometheus.GaugeValue, 1, wanStatusResponse.Data.Ipv4Dns)
+		// ch <- prometheus.MustNewConstMetric(IPAddressV6Desc, prometheus.GaugeValue, 1, wanStatusResponse.Data.IPAddressV6)
+		for _, IPAddressV6 := range wanStatusResponse.Data.IPAddressV6 {
+			ch <- prometheus.MustNewConstMetric(IPAddressV6Desc, prometheus.GaugeValue, 1, IPAddressV6)
+		}
+
+		// ch <- prometheus.MustNewConstMetric(DNSTblRTDesc, prometheus.GaugeValue, 1, wanStatusResponse.Data.DNSTblRT)
+		for _, DNSTblRT := range wanStatusResponse.Data.DNSTblRT {
+			ch <- prometheus.MustNewConstMetric(DNSTblRTDesc, prometheus.GaugeValue, 1, DNSTblRT)
+		}
 	}
 
 	callLog, err := c.Station.GetCallLog()
