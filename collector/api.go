@@ -58,6 +58,7 @@ type DocsisStatusResponse struct {
 type DocsisStatusData struct {
 	OfdmDownstreamData []*OfdmDownstreamData      `json:"ofdm_downstream"`
 	Downstream         []*DocsisDownstreamChannel `json:"downstream"`
+	OfdmaUpstreamData  []*OfdmaUpstreamData       `json:"ofdma_upstream"`
 	Upstream           []*DocsisUpstreamChannel   `json:"upstream"`
 }
 
@@ -86,6 +87,19 @@ type DocsisDownstreamChannel struct {
 	ChannelType      string `json:"ChannelType"`
 }
 
+type OfdmaUpstreamData struct {
+	Id               string `json:"__id"`
+	ChannelIdUp      string `json:"channelidup"`
+	StartFrequency   string `json:"start_frequency"`
+	EndFrequency     string `json:"end_frequency"`
+	Power            string `json:"power"`
+	CentralFrequency string `json:"CentralFrequency"`
+	Bandwidth        string `json:"bandwidth"`
+	Fft              string `json:"FFT"`
+	ChannelType      string `json:"ChannelType"`
+	RangingStatus    string `json:"RangingStatus"`
+}
+
 type DocsisUpstreamChannel struct {
 	Id               string `json:"__id"`
 	ChannelIdUp      string `json:"channelidup"`
@@ -102,48 +116,65 @@ type StationStatusReponse struct {
 	Data    *StationStatusData `json:"data"`
 }
 
+type DNSTable struct {
+	Id   string `json:"__id"`
+	Type string `json:"Type"`
+	Dns  string `json:"dns"`
+}
+
 type StationStatusData struct {
-	DateAndTime     string   `json:"dateandtime"`
-	FirewallStatus  string   `json:"firewallstatus"`
-	LanIpv4         string   `json:"lanipv4"`
-	LanMode         string   `json:"LanMode"`
-	LanGateway      string   `json:"langateway"`
-	LanDHCPstatus   string   `json:"lanDHCPstatus"`
-	LanMAC          string   `json:"lanMAC"`
-	LanPortStatus4  string   `json:"lanportstatus_4"`
-	LanPortSpeed4   string   `json:"lanportspeed_4"`
-	LanPortStatus1  string   `json:"lanportstatus_1"`
-	LanPortSpeed1   string   `json:"lanportspeed_1"`
-	LanPortStatus2  string   `json:"lanportstatus_2"`
-	LanPortSpeed2   string   `json:"lanportspeed_2"`
-	LanPortStatus3  string   `json:"lanportstatus_3"`
-	LanPortSpeed3   string   `json:"lanportspeed_3"`
-	WifiStatus      string   `json:"wifistatus"`
-	Channel         string   `json:"channel"`
-	Bandwidth       string   `json:"bandwidth"`
-	MaxSpeed        string   `json:"maxspeed"`
-	Ssid            string   `json:"ssid"`
-	MacAddress      string   `json:"macaddress"`
-	Security        string   `json:"security"`
-	WifiStatus5     string   `json:"wifistatus_5"`
-	Channel5        string   `json:"channel_5"`
-	Bandwidth5      string   `json:"bandwidth_5"`
-	MaxSpeed5       string   `json:"maxspeed_5"`
-	Ssid5           string   `json:"ssid_5"`
-	MacAddress5     string   `json:"macaddress_5"`
-	Security5       string   `json:"security_5"`
-	DnsEntries      string   `json:"DnsEntries"`
-	AFTR            string   `json:"AFTR"`
-	Serialnumber    string   `json:"serialnumber"`
-	FirmwareVersion string   `json:"firmwareversion"`
-	HardwareType    string   `json:"hardwaretype"`
-	Uptime          string   `json:"uptime"`
-	InternetIpv4    string   `json:"internetipv4"`
-	DnsTbl          []string `json:"Dns_Tbl"`
-	DelegatedPrefix string   `json:"DelegatedPrefix"`
-	DNSTblRT        []string `json:"DNSTblRT"`
-	IPAddressRT     []string `json:"IPAddressRT"`
-	IpPrefixClass   string   `json:"IpPrefixClass"`
+	DateAndTime     string     `json:"dateandtime"`
+	FirewallStatus  string     `json:"firewallstatus"`
+	LanIpv4         string     `json:"lanipv4"`
+	LanMode         string     `json:"LanMode"`
+	LanGateway      string     `json:"langateway"`
+	LanDHCPstatus   string     `json:"lanDHCPstatus"`
+	LanMAC          string     `json:"lanMAC"`
+	LanPortStatus4  string     `json:"lanportstatus_4"`
+	LanPortSpeed4   string     `json:"lanportspeed_4"`
+	LanPortStatus1  string     `json:"lanportstatus_1"`
+	LanPortSpeed1   string     `json:"lanportspeed_1"`
+	LanPortStatus2  string     `json:"lanportstatus_2"`
+	LanPortSpeed2   string     `json:"lanportspeed_2"`
+	LanPortStatus3  string     `json:"lanportstatus_3"`
+	LanPortSpeed3   string     `json:"lanportspeed_3"`
+	WifiStatus      string     `json:"wifistatus"`
+	Channel         string     `json:"channel"`
+	Bandwidth       string     `json:"bandwidth"`
+	MaxSpeed        string     `json:"maxspeed"`
+	Ssid            string     `json:"ssid"`
+	MacAddress      string     `json:"macaddress"`
+	Security        string     `json:"security"`
+	WifiStatus5     string     `json:"wifistatus_5"`
+	Channel5        string     `json:"channel_5"`
+	Bandwidth5      string     `json:"bandwidth_5"`
+	MaxSpeed5       string     `json:"maxspeed_5"`
+	Ssid5           string     `json:"ssid_5"`
+	MacAddress5     string     `json:"macaddress_5"`
+	Security5       string     `json:"security_5"`
+	DnsEntries      string     `json:"DnsEntries"`
+	AFTR            string     `json:"AFTR"`
+	Serialnumber    string     `json:"serialnumber"`
+	FirmwareVersion string     `json:"firmwareversion"`
+	HardwareType    string     `json:"hardwaretype"`
+	Uptime          string     `json:"uptime"`
+	InternetIpv4    string     `json:"internetipv4"`
+	DnsTbl          []DNSTable `json:"Dns_Tbl"`
+	DelegatedPrefix string     `json:"DelegatedPrefix"`
+	DNSTblRT        []string   `json:"DNSTblRT"`
+	IPAddressRT     []string   `json:"IPAddressRT"`
+	IpPrefixClass   string     `json:"IpPrefixClass"`
+}
+
+type WanStatusData struct {
+	Ipv4	 string     `json:"ipv4"`
+	Mac           string     `json:"mac_address"`
+	Duration	 string     `json:"duration"`
+	DurationIpv6  string     `json:"durationIpv6"`
+	Expires       string     `json:"expires"`
+	Ipv4Dns       string     `json:"ipv4_dns"`
+	IPAddressV6  []string     `json:"IPAddress_v6"`
+	DNSTblRT        []string   `json:"DNSTblRT"`
 }
 
 type CallLog struct {
@@ -187,6 +218,12 @@ type StationAboutResponse struct {
 	Error   string            `json:"error"`
 	Message string            `json:"message"`
 	Data    *StationAboutData `json:"data"`
+}
+
+type WanStatusResponse struct {
+	Error   string            `json:"error"`
+	Message string            `json:"message"`
+	Data    *WanStatusData	  `json:"data"`
 }
 
 type StationAboutData struct {
@@ -257,6 +294,10 @@ func (v *VodafoneStation) Login() (*LoginResponse, error) {
 	if loginResponse.Error != "ok" {
 		return nil, fmt.Errorf("Got non error=ok message from vodafone station")
 	}
+	_, err = v.doRequest("GET", v.URL+"/api/v1/session/menu", "")
+	if err != nil {
+		return nil, err
+	}
 	return loginResponse, nil
 }
 
@@ -309,12 +350,21 @@ func (v *VodafoneStation) GetCallLog() (*CallLog, error) {
 }
 
 func (v *VodafoneStation) GetLedSetting() (*LedSettingResponse, error) {
-	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/set_led?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/set_device?_="+strconv.FormatInt(makeTimestamp(), 10), "")
 	if err != nil {
 		return nil, err
 	}
 	ledSettingResponse := &LedSettingResponse{}
 	return ledSettingResponse, json.Unmarshal(responseBody, ledSettingResponse)
+}
+
+func (v *VodafoneStation) GetWanStatus() (*WanStatusResponse, error) {
+	responseBody, err := v.doRequest("GET", v.URL+"/api/v1/wan?_="+strconv.FormatInt(makeTimestamp(), 10), "")
+	if err != nil {
+		return nil, err
+	}
+	WanStatusResponse := &WanStatusResponse{}
+	return WanStatusResponse, json.Unmarshal(responseBody, WanStatusResponse)
 }
 
 func (v *VodafoneStation) GetStationAbout() (*StationAboutResponse, error) {

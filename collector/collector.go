@@ -37,6 +37,13 @@ var (
 	powerUpstreamDesc            *prometheus.Desc
 	rangingStatusUpstreamDesc    *prometheus.Desc
 
+	startFrequencyOfdmaUpstreamDesc   *prometheus.Desc
+	endFrequencyOfdmaUpstreamDesc     *prometheus.Desc
+	centralFrequencyOfdmaUpstreamDesc *prometheus.Desc
+	bandwidthOfdmaUpstreamDesc        *prometheus.Desc
+	powerOfdmaUpstreamDesc            *prometheus.Desc
+	rangingStatusOfdmaUpstreamDesc    *prometheus.Desc
+
 	firewallStatusDesc  *prometheus.Desc
 	lanIPv4Desc         *prometheus.Desc
 	lanModeDesc         *prometheus.Desc
@@ -62,6 +69,15 @@ var (
 	delegatedPrefixDesc *prometheus.Desc
 	ipAddressRTDesc     *prometheus.Desc
 	ipPrefixClassDesc   *prometheus.Desc
+
+	Ipv4Desc         *prometheus.Desc
+	MacDesc          *prometheus.Desc
+	DurationDesc     *prometheus.Desc
+	DurationIpv6Desc *prometheus.Desc
+	ExpiresDesc      *prometheus.Desc
+	Ipv4DnsDesc      *prometheus.Desc
+	IPAddressV6Desc  *prometheus.Desc
+	DNSTblRTDesc     *prometheus.Desc
 
 	callEndTimeDesc   *prometheus.Desc
 	callStartTimeDesc *prometheus.Desc
@@ -106,6 +122,14 @@ func init() {
 	powerUpstreamDesc = prometheus.NewDesc(prefix+"upstream_power_dBmV", "Power", upstreamLabels, nil)
 	rangingStatusUpstreamDesc = prometheus.NewDesc(prefix+"upstream_ranging_status_info", "Ranging status", append(upstreamLabels, "status"), nil)
 
+	ofdmaUpstreamLabels := []string{"id", "channel_id_up", "fft", "channel_type"}
+	startFrequencyOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_start_frequency_hertz", "Start frequency", ofdmaUpstreamLabels, nil)
+	endFrequencyOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_end_frequency_hertz", "End frequency", ofdmaUpstreamLabels, nil)
+	centralFrequencyOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_central_frequency_hertz", "Central frequency", ofdmaUpstreamLabels, nil)
+	bandwidthOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_bandwidth_hertz", "Bandwidth", ofdmaUpstreamLabels, nil)
+	powerOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_power_dBmV", "Power", ofdmaUpstreamLabels, nil)
+	rangingStatusOfdmaUpstreamDesc = prometheus.NewDesc(prefix+"ofdma_upstream_ranging_status_info", "Ranging status", append(ofdmaUpstreamLabels, "status"), nil)
+
 	firewallStatusDesc = prometheus.NewDesc(prefix+"firewall_status_info", "Firewall status", []string{"firewall_status"}, nil)
 	lanIPv4Desc = prometheus.NewDesc(prefix+"lan_ip4_info", "LAN IPv4 info", []string{"lan_ip4"}, nil)
 	lanModeDesc = prometheus.NewDesc(prefix+"lan_mode_info", "LAN mode info", []string{"mode"}, nil)
@@ -131,6 +155,15 @@ func init() {
 	delegatedPrefixDesc = prometheus.NewDesc(prefix+"delegated_prefix_info", "Delegated prefix information", []string{"prefix"}, nil)
 	ipAddressRTDesc = prometheus.NewDesc(prefix+"ip_address_rt_info", "IP address RT", []string{"ip"}, nil)
 	ipPrefixClassDesc = prometheus.NewDesc(prefix+"ip_prefix_class_info", "IP prefix class info", []string{"prefix_class"}, nil)
+
+	Ipv4Desc = prometheus.NewDesc(prefix+"wan_ip4_info", "WAN IPv4 info", []string{"wan_ip4"}, nil)
+	MacDesc = prometheus.NewDesc(prefix+"wan_mac_address_info", "WAN MAC address", []string{"wan_mac_address"}, nil)
+	DurationDesc = prometheus.NewDesc(prefix+"wan_duration_seconds", "WAN Duration in seconds", nil, nil)
+	DurationIpv6Desc = prometheus.NewDesc(prefix+"wan_ip6_duration_seconds", "WAN IPv6 Duration in seconds", nil, nil)
+	ExpiresDesc = prometheus.NewDesc(prefix+"wan_expires_seconds", "WAN Expires in seconds", nil, nil)
+	Ipv4DnsDesc = prometheus.NewDesc(prefix+"wan_ipv4_dns_info", "WAN IPv4 DNS server", []string{"wan_ipv4_dns"}, nil)
+	IPAddressV6Desc = prometheus.NewDesc(prefix+"wan_ip6_info", "WAN IPv6 info", []string{"wan_ip6"}, nil)
+	DNSTblRTDesc = prometheus.NewDesc(prefix+"wan_ipv6_dns_info", "WAN IPv6 DNS server", []string{"wan_ipv6_dns"}, nil)
 
 	callEndTimeDesc = prometheus.NewDesc(prefix+"call_end_time_epoch", "Call endtime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
 	callStartTimeDesc = prometheus.NewDesc(prefix+"call_start_time_epoch", "Call starttime as unix epoch", []string{"port", "id", "external_number", "direction", "type"}, nil)
@@ -171,6 +204,13 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- powerUpstreamDesc
 	ch <- rangingStatusUpstreamDesc
 
+	ch <- startFrequencyOfdmaUpstreamDesc
+	ch <- endFrequencyOfdmaUpstreamDesc
+	ch <- centralFrequencyOfdmaUpstreamDesc
+	ch <- bandwidthOfdmaUpstreamDesc
+	ch <- powerOfdmaUpstreamDesc
+	ch <- rangingStatusOfdmaUpstreamDesc
+
 	ch <- firewallStatusDesc
 	ch <- lanIPv4Desc
 	ch <- lanModeDesc
@@ -196,6 +236,15 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- delegatedPrefixDesc
 	ch <- ipAddressRTDesc
 	ch <- ipPrefixClassDesc
+
+	ch <- Ipv4Desc
+	ch <- MacDesc
+	ch <- DurationDesc
+	ch <- DurationIpv6Desc
+	ch <- ExpiresDesc
+	ch <- Ipv4DnsDesc
+	ch <- IPAddressV6Desc
+	ch <- DNSTblRTDesc
 
 	ch <- callEndTimeDesc
 	ch <- callStartTimeDesc
@@ -255,6 +304,15 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(powerUpstreamDesc, prometheus.GaugeValue, parse2float(upstreamChannel.Power), labels...)
 			ch <- prometheus.MustNewConstMetric(rangingStatusUpstreamDesc, prometheus.GaugeValue, 1, append(labels, upstreamChannel.RangingStatus)...)
 		}
+        for _, ofdmaUpstreamChannel := range docsisStatusResponse.Data.OfdmaUpstreamData {
+            labels := []string{ofdmaUpstreamChannel.Id, ofdmaUpstreamChannel.ChannelIdUp, ofdmaUpstreamChannel.Fft, ofdmaUpstreamChannel.ChannelType}
+            ch <- prometheus.MustNewConstMetric(startFrequencyOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.StartFrequency)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(endFrequencyOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.EndFrequency)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(centralFrequencyOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.CentralFrequency)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(bandwidthOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.Bandwidth)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(powerOfdmaUpstreamDesc, prometheus.GaugeValue, parse2float(ofdmaUpstreamChannel.Power)*10e9, labels...)
+            ch <- prometheus.MustNewConstMetric(rangingStatusOfdmaUpstreamDesc, prometheus.GaugeValue, 1, append(labels, ofdmaUpstreamChannel.RangingStatus)...)
+        }
 	}
 
 	stationStatusResponse, err := c.Station.GetStationStatus()
@@ -301,6 +359,27 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(ipAddressRTDesc, prometheus.GaugeValue, 1, ipAddressRT)
 		}
 		ch <- prometheus.MustNewConstMetric(ipPrefixClassDesc, prometheus.GaugeValue, 1, stationStatusResponse.Data.IpPrefixClass)
+	}
+
+	wanStatusResponse, err := c.Station.GetWanStatus()
+	if err != nil {
+		log.With("error", err.Error()).Error("Failed to get wan status")
+	} else if wanStatusResponse.Data != nil {
+		ch <- prometheus.MustNewConstMetric(Ipv4Desc, prometheus.GaugeValue, 1, wanStatusResponse.Data.Ipv4)
+		ch <- prometheus.MustNewConstMetric(MacDesc, prometheus.GaugeValue, 1, wanStatusResponse.Data.Mac)
+		ch <- prometheus.MustNewConstMetric(DurationDesc, prometheus.GaugeValue, parse2float(wanStatusResponse.Data.Duration))
+		ch <- prometheus.MustNewConstMetric(DurationIpv6Desc, prometheus.GaugeValue, parse2float(wanStatusResponse.Data.DurationIpv6))
+		ch <- prometheus.MustNewConstMetric(ExpiresDesc, prometheus.GaugeValue, parse2float(wanStatusResponse.Data.Expires))
+		ch <- prometheus.MustNewConstMetric(Ipv4DnsDesc, prometheus.GaugeValue, 1, wanStatusResponse.Data.Ipv4Dns)
+		// ch <- prometheus.MustNewConstMetric(IPAddressV6Desc, prometheus.GaugeValue, 1, wanStatusResponse.Data.IPAddressV6)
+		for _, IPAddressV6 := range wanStatusResponse.Data.IPAddressV6 {
+			ch <- prometheus.MustNewConstMetric(IPAddressV6Desc, prometheus.GaugeValue, 1, IPAddressV6)
+		}
+
+		// ch <- prometheus.MustNewConstMetric(DNSTblRTDesc, prometheus.GaugeValue, 1, wanStatusResponse.Data.DNSTblRT)
+		for _, DNSTblRT := range wanStatusResponse.Data.DNSTblRT {
+			ch <- prometheus.MustNewConstMetric(DNSTblRTDesc, prometheus.GaugeValue, 1, DNSTblRT)
+		}
 	}
 
 	callLog, err := c.Station.GetCallLog()
